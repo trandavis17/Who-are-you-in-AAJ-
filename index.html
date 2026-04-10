@@ -1,0 +1,230 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+#quiz { max-width: 560px; margin: 0 auto; padding: 2rem 1rem; }
+.progress-bar { height: 4px; background: var(--color-border-tertiary); border-radius: 2px; margin-bottom: 2rem; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--color-text-secondary); border-radius: 2px; transition: width 0.4s ease; }
+.q-label { font-size: 12px; color: var(--color-text-secondary); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.q-text { font-size: 20px; font-weight: 500; color: var(--color-text-primary); line-height: 1.4; margin-bottom: 1.5rem; }
+.choices { display: flex; flex-direction: column; gap: 10px; }
+.choice {
+  padding: 14px 18px;
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-lg);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-size: 15px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+  font-family: var(--font-sans);
+}
+.choice:hover { background: var(--color-background-secondary); border-color: var(--color-border-primary); }
+.choice.selected { border-color: #534AB7; background: #EEEDFE; color: #3C3489; }
+.choice.selected:hover { background: #CECBF6; }
+.next-btn {
+  margin-top: 1.5rem;
+  padding: 12px 28px;
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, background 0.15s;
+}
+.next-btn.visible { opacity: 1; pointer-events: all; }
+.next-btn:hover { background: var(--color-background-secondary); }
+
+#result { display: none; max-width: 560px; margin: 0 auto; padding: 2rem 1rem; text-align: center; }
+.result-avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 500; margin: 0 auto 1rem;
+}
+.result-name { font-size: 28px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.4rem; }
+.result-subtitle { font-size: 15px; color: var(--color-text-secondary); margin-bottom: 2rem; }
+.score-grid { display: flex; gap: 12px; justify-content: center; margin-bottom: 2rem; }
+.score-card {
+  flex: 1; max-width: 140px;
+  background: var(--color-background-secondary);
+  border-radius: var(--border-radius-md);
+  padding: 12px 8px;
+  text-align: center;
+}
+.score-card .sname { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 4px; }
+.score-card .snum { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+.score-card.winner .snum { color: #534AB7; }
+.retry-btn {
+  padding: 12px 28px;
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+.retry-btn:hover { background: var(--color-background-secondary); }
+</style>
+
+<div id="quiz">
+  <h2 class="sr-only">Which one of us are you? A personality quiz</h2>
+  <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+  <p class="q-label" id="q-counter">Question 1 of 5</p>
+  <p class="q-text" id="q-text"></p>
+  <div class="choices" id="choices"></div>
+  <button class="next-btn" id="next-btn">Next →</button>
+</div>
+
+<div id="result">
+  <p class="q-label" style="margin-bottom:1.5rem;">you are...</p>
+  <div class="result-avatar" id="res-avatar"></div>
+  <p class="result-name" id="res-name"></p>
+  <p class="result-subtitle" id="res-sub"></p>
+  <div class="score-grid" id="score-grid"></div>
+  <button class="retry-btn" onclick="restart()">Take it again</button>
+</div>
+
+<script>
+const questions = [
+  {
+    text: 'Do you randomly say "shibal" in everyday conversation??',
+    choices: [
+      { text: 'Yes', person: 'Andy' },
+      { text: 'No', person: 'Anna' },
+      { text: 'HELL YESS', person: 'Jocelyn' },
+    ]
+  },
+  {
+    text: 'Do you like saying "fuck my big fat chungus life"??',
+    choices: [
+      { text: 'Yes', person: 'Andy' },
+      { text: 'No', person: 'Jocelyn' },
+      { text: 'HELL YESS', person: 'Anna' },
+    ]
+  },
+  {
+    text: 'Do you like all day project??',
+    choices: [
+      { text: 'Who??', person: 'Anna' },
+      { text: 'Sure', person: 'Andy' },
+      { text: 'HELL YESS', person: 'Jocelyn' },
+    ]
+  },
+  {
+    text: 'Do you like going to raves?',
+    choices: [
+      { text: 'Yeah.', person: 'Anna' },
+      { text: 'Sometimes', person: 'Andy' },
+      { text: 'Maybe', person: 'Jocelyn' },
+    ]
+  },
+  {
+    text: 'Do you like drinking?',
+    choices: [
+      { text: 'Yeah.', person: 'Anna' },
+      { text: 'Sometimes', person: 'Andy' },
+      { text: 'HELL YESS', person: 'Jocelyn' },
+    ]
+  }
+];
+
+const personas = {
+  Andy: {
+    avatar: 'AY',
+    color: '#B5D4F4', textColor: '#0C447C',
+    sub: 'certified shibal-sayer, chungus life enjoyer',
+  },
+  Anna: {
+    avatar: 'AN',
+    color: '#C0DD97', textColor: '#27500A',
+    sub: 'yeah. that\'s it. just yeah.',
+  },
+  Jocelyn: {
+    avatar: 'JO',
+    color: '#F4C0D1', textColor: '#72243E',
+    sub: 'HELL YESS, obviously',
+  }
+};
+
+let current = 0;
+let scores = { Andy: 0, Anna: 0, Jocelyn: 0 };
+let selected = null;
+
+function render() {
+  const q = questions[current];
+  document.getElementById('q-counter').textContent = `Question ${current + 1} of ${questions.length}`;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('progress').style.width = (current / questions.length * 100) + '%';
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  selected = null;
+  document.getElementById('next-btn').classList.remove('visible');
+  q.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.textContent = c.text;
+    btn.onclick = () => selectChoice(i);
+    choicesEl.appendChild(btn);
+  });
+  document.getElementById('next-btn').textContent = current < questions.length - 1 ? 'Next →' : 'See my result →';
+}
+
+function selectChoice(i) {
+  selected = i;
+  document.querySelectorAll('.choice').forEach((el, idx) => {
+    el.classList.toggle('selected', idx === i);
+  });
+  document.getElementById('next-btn').classList.add('visible');
+}
+
+document.getElementById('next-btn').onclick = () => {
+  if (selected === null) return;
+  const person = questions[current].choices[selected].person;
+  scores[person]++;
+  current++;
+  if (current < questions.length) {
+    render();
+  } else {
+    showResult();
+  }
+};
+
+function showResult() {
+  document.getElementById('quiz').style.display = 'none';
+  const result = document.getElementById('result');
+  result.style.display = 'block';
+  const winner = Object.entries(scores).sort((a,b) => b[1]-a[1])[0][0];
+  const p = personas[winner];
+  const av = document.getElementById('res-avatar');
+  av.textContent = p.avatar;
+  av.style.background = p.color;
+  av.style.color = p.textColor;
+  document.getElementById('res-name').textContent = winner;
+  document.getElementById('res-sub').textContent = p.sub;
+  const grid = document.getElementById('score-grid');
+  grid.innerHTML = '';
+  ['Andy','Anna','Jocelyn'].forEach(name => {
+    const card = document.createElement('div');
+    card.className = 'score-card' + (name === winner ? ' winner' : '');
+    card.innerHTML = `<div class="sname">${name}</div><div class="snum">${scores[name]}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+function restart() {
+  current = 0;
+  scores = { Andy: 0, Anna: 0, Jocelyn: 0 };
+  selected = null;
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('quiz').style.display = 'block';
+  render();
+}
+
+render();
+</script>
